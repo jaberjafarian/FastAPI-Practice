@@ -39,7 +39,7 @@ def get_expense(expense_id: int):
     return expenses[expense_id]
 
 
-
+#Update
 @app.put("/expenses/{expense_id}")
 def update_expense(
     expense_id: int,
@@ -58,6 +58,7 @@ def update_expense(
     return expenses[expense_id]
 
 
+#Delete
 @app.delete("/expenses/{expense_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_expense(expense_id: int):
     if expense_id not in expenses:
