@@ -1,12 +1,13 @@
 from fastapi import FastAPI, HTTPException, status
 from pydantic import BaseModel, Field
+import uuid
 
 app = FastAPI(title="Expenses API")
 
 
 # ---------- Pydantic Models ----------
 
-class ExpenseCreate(BaseModel):
+class ExpenseCreateSchema(BaseModel):
     description: str = Field(
         ...,
         min_length=3,
@@ -20,7 +21,7 @@ class ExpenseCreate(BaseModel):
     )
 
 
-class ExpenseOut(BaseModel):
+class ExpenseOutSchema(BaseModel):
     id: int
     description: str
     amount: float
@@ -28,38 +29,37 @@ class ExpenseOut(BaseModel):
 
 # ---------- In-memory storage ----------
 
-expenses: dict[int, ExpenseOut] = {}
-next_id = 0
+expenses: dict[int, ExpenseOutSchema] = {}
+next_id = new_id = int(uuid.uuid4())
 
 
 # ---------- Create ----------
 
-@app.post("/expenses", status_code=status.HTTP_201_CREATED, response_model=ExpenseOut)
-def create_expense(data: ExpenseCreate) -> ExpenseOut:
+@app.post("/expenses", status_code=status.HTTP_201_CREATED, response_model=ExpenseOutSchema)
+def create_expense(data: ExpenseCreateSchema) -> ExpenseOutSchema:
     global next_id
 
-    new_expense = ExpenseOut(
+    new_expense = ExpenseOutSchema(
         id=next_id,
         description=data.description,
         amount=data.amount
     )
     expenses[next_id] = new_expense
-    next_id += 1
 
     return new_expense
 
 
 # ---------- Get all ----------
 
-@app.get("/expenses", response_model=list[ExpenseOut])
-def get_all_expenses() -> list[ExpenseOut]:
+@app.get("/expenses", response_model=list[ExpenseOutSchema])
+def get_all_expenses() -> list[ExpenseOutSchema]:
     return list(expenses.values())
 
 
 # ---------- Get one ----------
 
-@app.get("/expenses/{expense_id}", response_model=ExpenseOut)
-def get_expense(expense_id: int) -> ExpenseOut:
+@app.get("/expenses/{expense_id}", response_model=ExpenseOutSchema)
+def get_expense(expense_id: int) -> ExpenseOutSchema:
     if expense_id not in expenses:
         raise HTTPException(status_code=404, detail="Expense not found")
     return expenses[expense_id]
@@ -67,12 +67,12 @@ def get_expense(expense_id: int) -> ExpenseOut:
 
 # ---------- Update ----------
 
-@app.put("/expenses/{expense_id}", response_model=ExpenseOut)
-def update_expense(expense_id: int, data: ExpenseCreate) -> ExpenseOut:
+@app.put("/expenses/{expense_id}", response_model=ExpenseOutSchema)
+def update_expense(expense_id: int, data: ExpenseCreateSchema) -> ExpenseOutSchema:
     if expense_id not in expenses:
         raise HTTPException(status_code=404, detail="Expense not found")
 
-    updated = ExpenseOut(
+    updated = ExpenseOutSchema(
         id=expense_id,
         description=data.description,
         amount=data.amount
